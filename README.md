@@ -1,26 +1,41 @@
 # Sync Pass
 
-Proyecto React + Vite + TypeScript. Deploy en Vercel ✅. Auth con Auth0 (pendiente).
+Plataforma de gestión de proyectos, eventos y asistencia en terreno. Frontend React + BFF Spring Boot, auth con Auth0 y roles.
 
-> Esta es la bitácora oficial paso a paso. Solo se agrega un paso cuando queda bien y verificado.
+> Esta es la bitácora oficial paso a paso. Solo se marca un paso ✅ cuando queda verificado.
 
 ## Stack actual (verificado 2026-10-13)
 
-- Node: v24.15.0 / npm: 11.12.1
-- React: ^19.2.8 + react-dom ^19.2.8
-- Vite: ^8.3.0 (build verificado en 8.3.4)
-- TypeScript: ~6.0.2
-- Plugin: @vitejs/plugin-react ^6.1.1
-- Lint: oxlint ^1.81.0
+**Frontend** (`/`):
+- Node v24.15.0 / npm 11.12.1
+- React ^19.2.8 + react-dom ^19.2.8, TypeScript ~6.0.2, Vite ^8.3.0
+- Tailwind CSS ^4.3.3 (plugin `@tailwindcss/vite`), wouter ^3.13.0
+- Auth0 `@auth0/auth0-react` ^2.28.2
+- Tests: vitest ^5.0.4 + jsdom + Testing Library (react ^16.3.3, jest-dom ^7.0.1)
+- Lint: oxlint
+
+**BFF** (`bff/`):
+- Java 21.0.12 + Gradle wrapper 8.14.3 + Spring Boot 3.5.16
+- `spring-boot-starter-web`, `spring-boot-starter-security`, `spring-boot-starter-oauth2-resource-server`
+
+**Prod:** https://citt-sync-pass-front.vercel.app/ (deploy automático por push a `main`)
 
 ## Cómo correr en local
 
 ```bash
+# Frontend
 npm install
-npm run dev      # desarrollo con HMR -> http://localhost:5173
-npm run build    # tsc -b && vite build -> genera dist/
-npm run preview  # previsualiza el build
-npm run lint     # oxlint
+npm run dev        # http://localhost:5173 (HMR)
+npm test           # vitest run único
+npm run test:watch # modo watch
+npm run build      # tsc -b && vite build -> dist/
+npm run lint       # oxlint
+
+# BFF (Java 21)
+cd bff
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21
+./gradlew bootRun  # http://localhost:8080
+./gradlew build    # compila + tests
 ```
 
 ## Bitácora paso a paso
@@ -28,31 +43,17 @@ npm run lint     # oxlint
 ### Paso 1: Proyecto base React + Vite + TS ✅ HECHO
 
 **Fecha:** 2026-10-13
-**Objetivo:** partir de template Vite React-TS funcional y dejarlo corriendo + compilando.
+**Objetivo:** partir del template Vite React-TS y dejarlo corriendo + compilando.
 
-**Qué había:**
-- Scaffold Vite (`citt@0.0.0`, `type: module`) con `src/main.tsx` -> `src/App.tsx`, `index.html` con `<div id="root">`, `vite.config.ts` con `plugins: [react()]`.
-- Scripts en `package.json:6-11`: `dev: vite`, `build: tsc -b && vite build`, `lint: oxlint`, `preview: vite preview`.
-- Cambios propios vs template original (commit `2f1c419 feat: v0.0.1` + working tree):
-  - `README.md` reemplazado por `Sync Pass` + roadmap Vercel/Auth0.
-  - `.gitignore` + `.private/` para secretos locales no versionados.
+**Qué se hizo:**
+1. Se inspeccionó la estructura (`index.html`, `src/`, `package.json`, `vite.config.ts`).
+2. Se personalizó el `README.md` a `Sync Pass` y se agregó `.private/` al `.gitignore`.
 
-**Qué se hizo en esta sesión:**
-1. Se inspeccionó estructura: `index.html`, `src/`, `package.json`, `vite.config.ts`.
-2. Se verificó compilación limpia.
-
-**Verificación (exitosa):**
-```bash
-npm run build
-# vite v8.3.4 building client environment for production...
-# ✓ 20 modules transformed.
-# dist/index.html 0.45 kB, dist/assets/index-CVtPK4EU.js 222.44 kB
-# ✓ built in 420ms
-```
+**Verificación:** `npm run build` limpio (20 módulos, `dist/` generado).
 
 **Errores comunes:**
-- `tsc -b` falla -> revisar `tsconfig.app.json` / tipos en `src/`.
-- Puerto 5173 ocupado -> Vite propone otro automáticamente o usar `vite --port 5174`.
+- `tsc -b` falla → revisar `tsconfig.app.json` / tipos en `src/`.
+- Puerto 5173 ocupado → Vite propone otro automáticamente o usar `vite --port 5174`.
 
 ---
 
@@ -61,230 +62,100 @@ npm run build
 **Fecha:** 2026-10-13
 **Objetivo:** publicar `main` en Vercel con deploy automático por push.
 
-**Configuración usada (presets Vite):**
-- Framework Preset: `Vite`
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- Install Command: `npm install`
+**Configuración (presets Vite):** Framework `Vite`, Build `npm run build`, Output `dist`, Install `npm install`.
 
-**Verificación (exitosa):**
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" -L "https://citt-sync-pass-front.vercel.app/"
-# 200
-# HTML contiene el bundle del build local:
-# /assets/index-CVtPK4EU.js + /assets/index-D64VDMd1.css + <div id="root">
-```
-
-**Cuando quede bien, anotar aquí:**
+**Datos:**
 - URL prod: https://citt-sync-pass-front.vercel.app/
-- Commit: `2f1c419 feat: v0.0.1` (2026-10-13) + working tree (`README.md`, `.gitignore` con `.private/`)
-- Fecha: 2026-10-13
-- Nota: primera URL entregada (`...8o9a1uwwc...vercel.app`) tenía Deployment Protection con redirect a `vercel.com/login`, se descartó y se validó la de producción.
+- Nota: la primera URL entregada (`...8o9a1uwwc...vercel.app`) tenía Deployment Protection (redirect a `vercel.com/login`); se descartó y se validó la de producción (`curl` → `200` con el bundle del build).
 
 ---
 
-### Paso 3: Auth con Auth0 ✅ HECHO (login funcional en local, falta verificar en prod)
+### Paso 3: Auth con Auth0 ✅ HECHO
 
 **Fecha:** 2026-10-13
-**Objetivo:** integrar React Quickstart de Auth0 (login/signup/logout + perfil).
+**Objetivo:** login/signup/logout + perfil con el React Quickstart de Auth0.
 
-**Config Auth0 Dashboard (por ti):**
-- Application Origin: `https://citt-sync-pass-front.vercel.app`
-- Callback URL: `https://citt-sync-pass-front.vercel.app/`
-- Logout URL: `https://citt-sync-pass-front.vercel.app/`
-- Web Origin: `https://citt-sync-pass-front.vercel.app/`
+**Config en Auth0 Dashboard:**
 - Domain: `dev-qd6i88udlr5yzjtv.us.auth0.com`
+- Allowed Callback / Logout / Web Origins: `https://citt-sync-pass-front.vercel.app` y `http://localhost:5173` (con y sin `/` final, Auth0 compara exacto).
+- Conexión: solo email + password (social desactivada en la app, ver error Dev Keys).
 
 **Qué se hizo:**
-1. Instalación:
-```bash
-npm install @auth0/auth0-react@2.x
-# instalado: @auth0/auth0-react ^2.28.2
-```
-2. `src/main.tsx`: envuelto `<App />` en `<Auth0Provider domain clientId authorizationParams={{ redirect_uri: window.location.origin }}>`. Se adaptó import de `./App.jsx` a `./App.tsx` y se mantuvo `./index.css`.
-3. `src/App.tsx`: reemplazado demo Vite por flujo `useAuth0()` (`isLoading`, `isAuthenticated`, `loginWithRedirect`, `logout`, `user`, `error`). Ajustes TS:
-   - `user?.email` por `User | undefined`.
-   - `onClick={() => login()}` en Login (evita error TS2322: `RedirectLoginOptions` vs `MouseEvent`).
+1. `npm install @auth0/auth0-react@2.x` (quedó `^2.28.2`).
+2. `src/main.tsx`: `<App />` envuelto en `<Auth0Provider domain clientId authorizationParams={{ redirect_uri: window.location.origin }}>`.
+3. Flujo `useAuth0()` (login/signup/logout/perfil). Ajustes TS: `user?.email` y `onClick={() => login()}` (evita error TS2322).
 
-**Verificación (exitosa local):**
-```bash
-npm run build
-# ✓ 17 modules transformed.
-# dist/assets/index-BcVsr2Ll.js 450.37 kB
-# ✓ built in 86ms
-npm run lint
-# oxlint sin errores
-```
+**Verificación:** `npm run build` ✅ + login probado en prod con usuario de prueba.
 
 **Errores típicos:**
-- `Callback URL mismatch` (2026-10-13, en prod): Auth0 compara exacto. La app envía `window.location.origin` (sin `/` final). Fix: en **Allowed Callback URLs** registrar con y sin slash, para prod y local:
-  - `https://citt-sync-pass-front.vercel.app` + `https://citt-sync-pass-front.vercel.app/`
-  - `http://localhost:5173` + `http://localhost:5173/`
-  - Lo mismo en **Allowed Logout URLs** y **Allowed Web Origins**.
-- Aviso `Dev Keys` (2026-10-13): la conexión social usaba credenciales de prueba de Auth0. Fix: **Applications → tu app → Connections** → desactivar la conexión social (se usa solo email + password). Si a futuro se quiere Google real, crear OAuth Client ID propio en Google Cloud Console y pegarlo en **Authentication → Social → Google**.
-
-**Pendiente para ✅ total:**
-- Push -> Vercel redeploy -> probar Signup/Login/Logout en `https://citt-sync-pass-front.vercel.app/` y confirmar `redirect_uri` + logout `returnTo` vuelven al origen.
+- `Callback URL mismatch`: registrar las URLs con y sin slash, en prod y local.
+- Aviso `Dev Keys`: la conexión social usaba credenciales de prueba → se desactivó (Applications → app → Connections). Para Google real a futuro: OAuth Client ID propio en Google Cloud Console → Authentication → Social → Google.
 
 ---
 
-### Paso 4: Auth0 centralizado en `src/config.ts` ✅ HECHO
+### Paso 4: Auth0 centralizado en config ✅ HECHO
 
 **Fecha:** 2026-10-13
-**Objetivo:** sacar `domain`/`clientId` de `src/main.tsx` a un archivo de config en duro (los envs de Vercel son de pago en el plan actual, se descarta `.env`).
+**Objetivo:** sacar `domain`/`clientId` de `src/main.tsx` a un archivo de config (se optó por valores en duro para no depender de envs en Vercel).
+
+**Qué se hizo:** `src/config/auth.ts` (hoy) con `AUTH0_DOMAIN` y `AUTH0_CLIENT_ID`; `main.tsx` importa de ahí. Se descartó el intento intermedio con `.env` (archivos eliminados).
+
+**Nota:** `domain` + `clientId` son valores públicos de SPA (visibles en el JS), no secretos. Nunca poner un `clientSecret` en el frontend.
+
+**Regla de orden (2026-10-13, rev. 2026-10-14):** toda la config del front vive en `src/config/auth.ts` (único archivo: Auth0, audience, BFF_URL, claim, roles). Cada valor sale de `VITE_*` con default en duro: en local se sobreescribe con `.env.local` (ignorado por git, ej. `VITE_BFF_URL` al servicio de CasaOS); en Vercel no hay `.env.local`, así que prod usa los defaults. Nada hardcodeado fuera de ahí (ni en páginas ni en tests). En el BFF, lo mismo: todo en `application.yml` + package `config/` (`Auth0Properties`, `CorsProperties`).
+
+---
+
+### Paso 5: Roles y permisos ✅ HECHO
+
+**Fecha:** 2026-10-13
+**Objetivo:** RBAC con 4 roles: `admin`, `coordinator`, `volunteer`, `attendee`.
+
+| Rol (Auth0 Name) | Slug | Acceso |
+|---|---|---|
+| Administrador del Sistema | `admin` | Todo: auditoría y respaldos |
+| Coordinador de Proyecto | `coordinator` | CRUD proyectos/eventos + métricas |
+| Estudiante Voluntario | `volunteer` | Escaneo QR + registro en terreno |
+| Beneficiario Comunitario | `attendee` | Ver actividades + responder encuestas |
+
+**Cómo funciona:**
+1. Roles creados en Auth0 (User Management → Roles) + usuario de prueba con rol `admin`.
+2. Post-Login Action `add-roles-claim` (en el flujo Login) inyecta `https://sync-pass/roles` en ID token **y** access token.
+3. React lee el claim (`useUserRoles()` / `useHasRole()`) y `RequireAuth` protege rutas. Ojo: el frontend solo oculta UI; la autorización real la valida el BFF por token.
+
+---
+
+### Paso 6: Tailwind v4 + rutas + estructura ✅ HECHO
+
+**Fecha:** 2026-10-13
+**Objetivo:** UI base con Tailwind, 3 rutas y carpetas por dominio.
 
 **Qué se hizo:**
-1. Nuevo `src/config.ts` con `AUTH0_DOMAIN` y `AUTH0_CLIENT_ID` exportados.
-2. `src/main.tsx`: importa desde `./config.ts` (revirtió el intento con `import.meta.env` + `.env.example`/`.env.local`, archivos eliminados).
-3. Sin config extra en Vercel: el deploy funciona tal cual con `npm run build` -> `dist/`.
+1. `npm install tailwindcss @tailwindcss/vite wouter` (en v4 no hay `tailwind.config.js`).
+2. `vite.config.ts`: plugin `tailwindcss()`; `src/index.css`: `@import 'tailwindcss';` en primera línea.
+3. Estructura `src/`: `pages/`, `components/`, `hooks/`, `config/`, `clients/` (luego a carpetas por componente en Paso 7; `src/App.css` eliminado).
+4. Rutas wouter en `App.tsx`: `/` pública, `/dashboard` con login, `/users` solo `admin`. Nav que muestra links según sesión/rol.
+5. `vercel.json` con rewrites `/(.*) → /index.html` (sin esto, recargar `/dashboard` daba 404).
+6. UI full-width + pulido: `#root` 100%, header sticky con blur, botones base, cards con hover.
+7. Convención CSS: módulos `*.module.css` para lo estructural + Tailwind para utilidades.
 
-**Verificación (exitosa local):**
-```bash
-npm run build
-# ✓ 18 modules transformed.
-# ✓ built in 92ms
-npm run lint
-# oxlint sin errores
-```
-
-**Nota:** `domain` + `clientId` son valores públicos de SPA (quedan visibles en el JS), no son secretos. Nunca poner un `clientSecret` en el frontend.
-
-**Pendiente para ✅ total del Auth0:**
-- Push -> Vercel redeploy -> probar Signup/Login/Logout en `https://citt-sync-pass-front.vercel.app/`.
+**Verificación:** `npm run build` ✅ + `npm run lint` ✅ + deploys a prod verificados (`/`, `/dashboard`, `/users` → `200`; commits `f9c82a5`, `9133d9d`).
 
 ---
 
-### Paso 5: Roles y permisos 📝 SPEC (pendiente implementar)
-
-**Fecha spec:** 2026-10-13
-**Objetivo:** definir los 4 roles de la plataforma antes de picar RBAC.
-
-| Rol (Auth0 Name) | Slug | Descripción |
-|---|---|---|
-| Coordinador de Proyecto | `coordinator` | Docente/coordinador: gestiona proyectos, eventos y revisa métricas de impacto. |
-| Estudiante Voluntario | `volunteer` | Alumno monitor: escanea QR y opera en terreno (modo offline). |
-| Beneficiario Comunitario | `attendee` | Asistente/vecino: participa en actividades y responde encuestas. |
-| Administrador del Sistema | `admin` | Admin general: auditoría y gestión de respaldos. |
-
-**Reglas de acceso (propuesta, a validar):**
-- `admin`: todo (incluye auditoría + respaldos).
-- `coordinator`: CRUD proyectos/eventos + ver métricas. No toca auditoría/respaldos.
-- `volunteer`: escanear QR + registro en terreno. Sin gestión ni métricas.
-- `attendee`: ver actividades + responder encuestas. Solo lectura propia.
-
-**Cómo se implementará (notas técnicas):**
-1. Crear los 4 roles en Auth0 Dashboard -> User Management -> Roles (usar los slugs).
-2. El `user` del SDK no trae roles por defecto: agregar Post-Login Action que inyecte custom claim (ej. `https://sync-pass/roles` = `event.authorization.roles`).
-3. En React: leer el claim del ID token y crear guardas por rol (rutas/componentes). Ojo: el frontend solo oculta UI, la autorización real debe validarla el backend/API por token.
-4. Asignación inicial manual en Dashboard; después auto-asignar `attendee` por defecto al registrarse.
-
-**Checklist para darlo por HECHO:**
-1. ✅ Roles creados en Auth0 con esos slugs (2026-10-13, User Management -> Roles) + usuario de prueba creado por UI con rol `admin` asignado.
-2. ⏳ Action post-login (código entregado, confirmar que quedó en el flujo Login del Dashboard).
-3. 🔨 Guardas en React codeadas (2026-10-13, pendiente probar en prod, reubicadas en Paso 6):
-   - `src/config/auth.ts`: `ROLES_CLAIM` + slugs `ROLES`.
-   - `src/hooks/useRoles.ts`: `useUserRoles()` lee `user['https://sync-pass/roles']`, `useHasRole()`.
-   - `src/components/RequireAuth.tsx`: exige login y opcionalmente rol.
-   - Verificación local: `npm run build` ✅ + `npm run lint` ✅.
-
----
-
-### Paso 6: Tailwind v4 + rutas (wouter) + estructura de carpetas ✅ HECHO
+### Paso 7: Convención carpeta-por-componente + tests ✅ HECHO
 
 **Fecha:** 2026-10-13
-**Objetivo:** UI base con Tailwind última versión, 3 rutas y carpetas `pages/components/hooks/config/clients`.
+**Objetivo:** cada componente/página en su carpeta kebab con `.tsx`, `.module.css`, `.test` y `.utils.ts` (+ su test).
 
-**1. Instalación:**
-```bash
-npm install tailwindcss @tailwindcss/vite wouter
-# tailwindcss ^4.3.3, @tailwindcss/vite ^4.3.3, wouter ^3.13.0
-```
+**Qué se hizo:**
+1. `npm install -D vitest jsdom @testing-library/react @testing-library/jest-dom` (RTL v16, con `renderHook`).
+2. `vite.config.ts`: `defineConfig` desde `vitest/config` + `test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'] }`. Scripts `npm test` / `test:watch`.
+3. Ejemplo de referencia `components/user-card/` (`UserCard` + `roleLabel` + tests, usado en `/users`).
+4. Tests con Auth0 mockeado (`vi.mock`): `RequireAuth` (4 casos), `Layout`, `UsersPage` (incluye fallback a login interactivo).
+5. `hooks/use-document-title/`: `useDocumentTitle()` testeado con `renderHook`, usado en las 3 páginas.
 
-**2. Config Tailwind v4 (sin `tailwind.config.js`, así es v4):**
-- `vite.config.ts`: plugin `tailwindcss()` junto a `react()`.
-- `src/index.css`: primera línea `@import 'tailwindcss';` (el resto del CSS global se mantiene).
-
-**3. Estructura nueva (moves + archivos):**
-```
-src/
-  pages/       HomePage, DashboardPage, UsersPage (+ *.module.css)
-  components/  Layout, RequireAuth (+ *.module.css)
-  hooks/       useRoles.ts (movido de src/)
-  config/      auth.ts (movido de src/config.ts)
-  clients/     api.ts (wrapper fetch + TODO backend)
-```
-- Eliminado `src/App.css` (sin uso).
-
-**4. Rutas (wouter en `src/App.tsx`):**
-- `/` pública (Home: login/signup o bienvenida + link al dashboard).
-- `/dashboard` exige login (`RequireAuth`), cards placeholder.
-- `/users` exige rol `admin`, tabla ejemplo.
-- Nav en `Layout`: muestra Dashboard solo logeado, Usuarios solo admin.
-
-**5. Convención CSS:** módulos `*.module.css` para lo estructural + clases Tailwind (`flex gap-2`...) para utilidades. Siempre preferir CSS module.
-
-**Verificación (exitosa local):**
-```bash
-npm run build
-# ✓ 36 modules transformed.
-# ✓ built in 127ms
-npm run lint
-# oxlint sin errores
-```
-
-**Deploy a prod (2026-10-13):**
-- Commit `f9c82a5` pusheado a `origin/main`, Vercel redeployó solo.
-- `vercel.json` con rewrites `/(.*) -> /index.html` (SPA fallback: sin esto, recargar `/dashboard` daba 404).
-- Verificación: `/`, `/dashboard`, `/users` → `200` con el bundle nuevo en prod.
-
-**UI full-width + pulido (2026-10-13, sin commitear):**
-- `#root` a ancho completo (fuera límite 1126px + bordes), `Layout` nav/main 100%.
-- Header sticky con blur, botones base globales, Login primario con accent, cards con hover.
-- Verificación: `npm test` 9/9 ✅, `build` ✅, `lint` ✅.
-
-**Pendiente:**
-- Probar login con usuario admin en prod y recorrer las 3 rutas.
-
----
-
-### Paso 7: Convención carpeta-por-componente + tests Vitest ✅ HECHO
-
-**Fecha:** 2026-10-13
-**Objetivo:** cada componente/página vive en su carpeta kebab con su `.tsx`, `.module.css`, `.test` y `.utils.ts` (+ su test).
-
-**1. Instalación (dev):**
-```bash
-npm install -D vitest jsdom @testing-library/react @testing-library/jest-dom
-# vitest ^5.0.4. RTL v16 (compatible React 19, trae renderHook si se necesita).
-```
-
-**2. Config:**
-- `vite.config.ts`: `defineConfig` desde `vitest/config` + bloque `test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'] }`.
-- `src/test/setup.ts`: importa `@testing-library/jest-dom/vitest` (matchers como `toBeInTheDocument`).
-- Scripts: `npm test` (run único) y `npm run test:watch`.
-
-**3. Estructura adoptada:**
-```
-src/components/user-card/
-  UserCard.tsx            componente
-  UserCard.module.css     estilos (si lo necesita)
-  UserCard.test.tsx       test render con Testing Library
-  UserCard.utils.ts       lógica pura (si la necesita)
-  UserCard.utils.test.ts  test del util
-```
-- Misma idea para páginas: `pages/home/`, `pages/dashboard/`, `pages/users/`.
-- `components/layout/` + `Layout.test.tsx`, `components/require-auth/` + `RequireAuth.test.tsx` (mockea `@auth0/auth0-react` con `vi.mock`).
-- `hooks/use-roles/` para el hook de roles.
-- `hooks/use-document-title/` ejemplo de hook con `renderHook`: `useDocumentTitle()` + test (cambia y restaura el título; usado en las 3 páginas).
-
-**Verificación (exitosa local):**
-```bash
-npm test
-# Test Files  4 passed (4)
-# Tests  9 passed (9)
-npm run build   # ✓ 39 modules transformed.
-npm run lint    # oxlint sin errores
-```
+**Verificación:** `npm test` → 6 archivos, 14 tests ✅ + `build` ✅ + `lint` ✅.
 
 ---
 
@@ -313,7 +184,7 @@ export default function MiComponente({ nombre }: { nombre: string }) {
 ```
 - Props tipadas inline (o `type Props = {...}` si son muchas).
 - Estilos estructurales en el `.module.css`, utilidades Tailwind en `className`.
-- Los imports de `.module.css` funcionan en tests sin configurar nada (jsdom + vite los resuelve).
+- Los imports de `.module.css` funcionan en tests sin configurar nada.
 
 ### 3. El test (`MiComponente.test.tsx`)
 
@@ -338,7 +209,7 @@ npm test                                    # todo el proyecto
 npm run build && npm run lint               # no romper nada
 ```
 
-### 5. Si el componente usa Auth0 u otro contexto: mockear
+### 5. Si usa Auth0 u otro contexto: mockear
 
 ```tsx
 import { beforeEach, vi } from 'vitest'
@@ -357,50 +228,54 @@ mockUseAuth0.mockReturnValue({
 })
 ```
 - Ejemplo real: `src/components/require-auth/RequireAuth.test.tsx`.
-- `vi.mock` va arriba del archivo (se eleva solo); el `mockReturnValue` se setea por test.
-- Para hooks sueltos, RTL trae `renderHook` (ej. `renderHook(() => useUserRoles(), { wrapper })`).
+- Para hooks sueltos: `renderHook` de RTL.
 
 ## Guía: cómo crear un utils (y testearlo)
 
-Si la lógica es pura (sin JSX ni hooks), va a `MiComponente.utils.ts` al lado del componente.
+Si la lógica es pura (sin JSX ni hooks), va a `MiComponente.utils.ts` al lado del componente, con su `MiComponente.utils.test.ts` (ojo: `.test.ts`, no `.tsx`) y asserts directos.
 
-### 1. El archivo (`MiComponente.utils.ts`)
+**Criterio:** ¿lleva JSX o hooks? → `.tsx` + Testing Library. ¿Función pura? → `.utils.ts` (más rápido y simple).
 
-```ts
-export function roleLabel(slug: string): string {
-  const labels: Record<string, string> = { admin: 'Administrador del Sistema' }
-  return labels[slug] ?? slug
-}
-```
+---
 
-### 2. Su test (`MiComponente.utils.test.ts`, ojo: `.test.ts`, no `.tsx`)
+### Paso 8: BFF Spring Boot + Auth0 ✅ HECHO
 
-```ts
-import { describe, expect, it } from 'vitest'
-import { roleLabel } from './MiComponente.utils.ts'
+**Fecha:** 2026-10-13
+**Objetivo:** `bff/` valida el JWT de Auth0 y expone `GET /api/users` (mock) solo a `admin`.
 
-describe('roleLabel', () => {
-  it('traduce slugs conocidos', () => {
-    expect(roleLabel('admin')).toBe('Administrador del Sistema')
-  })
+**Stack:** Spring Boot `3.5.16` + Gradle wrapper `8.14.3` + Java `21.0.12` (vía brew).
+**Archivos:** `BffApplication`, `config/` (`Auth0Properties`, `CorsProperties`, `SecurityConfig`), `security/` (`AudienceValidator`, `RolesClaimConverter`), `web/` (`UserController` + `UserDto`), tests (`BffApplicationTests`, `UserControllerTest`, `RolesClaimConverterTest`).
+**Cómo valida:** JWKS del tenant + issuer + audience `https://sync-pass-api` + claim `https://sync-pass/roles` → authorities `ROLE_*` → `@PreAuthorize("hasRole('admin')")`.
 
-  it('devuelve el slug si no lo conoce', () => {
-    expect(roleLabel('otro')).toBe('otro')
-  })
-})
-```
+**Config Auth0 necesaria (hecha en Dashboard):**
+1. API `Sync Pass API`, Identifier `https://sync-pass-api`, RS256.
+2. Action `add-roles-claim` con claim en ID token **y** access token, en el flujo Login.
+3. App SPA autorizada en el API + `Allow Skipping User Consent` ON.
 
-### 3. Correr
+**Verificación:** `./gradlew build` ✅ (`401` sin token, `403` sin admin, `200` + mock con admin) + app levantada: `curl /api/users` → `401`, preflight CORS desde Vercel → `200`.
 
-```bash
-npm test -- src/components/mi-componente
-```
+---
 
-**Criterio:** ¿lleva JSX o hooks? → `.tsx` + Testing Library. ¿Función pura? → `.utils.ts` + asserts directos (más rápido y simple).
+### Paso 9: Frontend conectado al BFF ✅ HECHO
+
+**Fecha:** 2026-10-13
+**Objetivo:** `/users` muestra usuarios reales del BFF en vez del mock estático.
+
+**Qué se hizo:**
+1. `src/config/auth.ts`: `AUTH0_AUDIENCE = 'https://sync-pass-api'`, `BFF_URL = 'http://localhost:8080'` (sin BFF en prod aún) + tipo `BffUser`.
+2. `src/clients/api.ts`: `apiGetUsers(token)` → `GET /api/users`.
+3. `src/pages/users/UsersPage.tsx`: pide `getAccessTokenSilently({ authorizationParams: { audience } })`. Estados: cargando / lista (`UserCard`) / error con pista. Si el silent falla con `consent_required`, hace `loginWithRedirect` con el audience una vez (patrón oficial Auth0).
+4. `UsersPage.test.tsx`: audience correcto, render de lista, error de red y redirección por consentimiento.
+
+**Verificación end-to-end (local, con BFF levantado):** login como admin → `/users` lista los 3 usuarios del BFF ✅.
+
+**Errores típicos (resueltos):**
+- `Client ... is not authorized to access resource server`: autorizar la SPA en el API (pestaña Machine to Machine Applications / Application Access).
+- `Consent required`: `Allow Skipping User Consent` ON + fallback a login interactivo en código.
 
 ## Convención de documentación
 
 1. Trabajamos el paso en código.
 2. Verificamos con comando (`build`, `dev`, URL Vercel, etc.).
-3. Recién ahí lo escribimos aquí como ✅ HECHO con fecha + verificación.
-4. Lo pendiente queda como ⏳ PENDIENTE con checklist.
+3. Recién ahí lo marcamos ✅ con fecha + verificación.
+4. Lo pendiente queda explícito con checklist.

@@ -1,26 +1,63 @@
+import { useEffect, useState } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 import UserCard from '../../components/user-card/UserCard.tsx'
+import { apiGetUsers } from '../../clients/api.ts'
+import { AUTH0_AUDIENCE, BFF_URL, type BffUser } from '../../config/auth.ts'
 import { useDocumentTitle } from '../../hooks/use-document-title/useDocumentTitle.ts'
 import styles from './UsersPage.module.css'
 
-// Placeholder: la lista real vendrá del backend (Management API nunca se
-// llama desde el frontend porque expondría el token de gestión).
-const ROWS = [
-  { email: 'admin@sync-pass.test', role: 'admin' },
-  { email: 'coordinador@sync-pass.test', role: 'coordinator' },
-  { email: 'voluntario@sync-pass.test', role: 'volunteer' },
-]
-
 export default function UsersPage() {
   useDocumentTitle('Usuarios | Sync Pass')
+  const { getAccessTokenSilently, loginWithRedirect } = useAuth0()
+  const [users, setUsers] = useState<BffUser[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    getAccessTokenSilently({
+      authorizationParams: { audience: AUTH0_AUDIENCE },
+    })
+      .then((token) => {
+        if (!token) throw new Error('Auth0 no devolvió access token')
+        return apiGetUsers(token)
+      })
+      .then((data) => {
+        if (alive) setUsers(data)
+      })
+      .catch((e: unknown) => {
+        // Patrón oficial Auth0: el silent no puede mostrar pantallas; si falta
+        // el consentimiento se hace un login interactivo una vez y queda guardado.
+        if ((e as { error?: string }).error === 'consent_required') {
+          loginWithRedirect({
+            authorizationParams: { audience: AUTH0_AUDIENCE },
+          }).catch(() => {})
+          return
+        }
+        if (alive) setError(e instanceof Error ? e.message : 'Error desconocido')
+      })
+    return () => {
+      alive = false
+    }
+  }, [getAccessTokenSilently, loginWithRedirect])
+
   return (
     <section>
       <h1>Usuarios</h1>
-      <p className="mb-4">Solo administradores. Datos de ejemplo.</p>
-      <div className={styles.list}>
-        {ROWS.map((r) => (
-          <UserCard key={r.email} email={r.email} role={r.role} />
-        ))}
-      </div>
+      <p className="mb-4">Solo administradores. Datos desde el BFF.</p>
+      {error && (
+        <p>
+          No se pudo cargar: {error} (¿BFF corriendo en {BFF_URL} con
+          `./gradlew bootRun`?).
+        </p>
+      )}
+      {!error && users === null && <p>Cargando usuarios...</p>}
+      {users && (
+        <div className={styles.list}>
+          {users.map((u) => (
+            <UserCard key={u.id} email={u.email} role={u.role} />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

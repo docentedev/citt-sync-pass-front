@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .private/
+
+# Gradle / BFF
+bff/.gradle/
+bff/build/

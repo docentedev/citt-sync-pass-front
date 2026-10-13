@@ -1,0 +1,17 @@
+# Sync Pass BFF. Compatible con `docker compose` y con CasaOS (Custom Install).
+# El puerto se publica solo en loopback: el acceso externo entra por nginx (/api/bff/).
+name: sync-pass-bff
+
+services:
+  bff:
+    build: .
+    image: sync-pass-bff:latest
+    container_name: sync-pass-bff
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3004:8080"
+    environment:
+      AUTH0_ISSUER: https://dev-qd6i88udlr5yzjtv.us.auth0.com/
+      AUTH0_JWK_SET_URI: https://dev-qd6i88udlr5yzjtv.us.auth0.com/.well-known/jwks.json
+      AUTH0_AUDIENCE: https://sync-pass-api
+      AUTH0_ROLES_CLAIM: https://sync-pass/roles
