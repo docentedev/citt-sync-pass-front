@@ -116,6 +116,12 @@ npm run lint
 # oxlint sin errores
 ```
 
+**Errores típicos:**
+- `Callback URL mismatch` (2026-10-13, en prod): Auth0 compara exacto. La app envía `window.location.origin` (sin `/` final). Fix: en **Allowed Callback URLs** registrar con y sin slash, para prod y local:
+  - `https://citt-sync-pass-front.vercel.app` + `https://citt-sync-pass-front.vercel.app/`
+  - `http://localhost:5173` + `http://localhost:5173/`
+  - Lo mismo en **Allowed Logout URLs** y **Allowed Web Origins**.
+
 **Pendiente para ✅ total:**
 - Push -> Vercel redeploy -> probar Signup/Login/Logout en `https://citt-sync-pass-front.vercel.app/` y confirmar `redirect_uri` + logout `returnTo` vuelven al origen.
 
@@ -144,6 +150,89 @@ npm run lint
 
 **Pendiente para ✅ total del Auth0:**
 - Push -> Vercel redeploy -> probar Signup/Login/Logout en `https://citt-sync-pass-front.vercel.app/`.
+
+---
+
+### Paso 5: Roles y permisos 📝 SPEC (pendiente implementar)
+
+**Fecha spec:** 2026-10-13
+**Objetivo:** definir los 4 roles de la plataforma antes de picar RBAC.
+
+| Rol (Auth0 Name) | Slug | Descripción |
+|---|---|---|
+| Coordinador de Proyecto | `coordinator` | Docente/coordinador: gestiona proyectos, eventos y revisa métricas de impacto. |
+| Estudiante Voluntario | `volunteer` | Alumno monitor: escanea QR y opera en terreno (modo offline). |
+| Beneficiario Comunitario | `attendee` | Asistente/vecino: participa en actividades y responde encuestas. |
+| Administrador del Sistema | `admin` | Admin general: auditoría y gestión de respaldos. |
+
+**Reglas de acceso (propuesta, a validar):**
+- `admin`: todo (incluye auditoría + respaldos).
+- `coordinator`: CRUD proyectos/eventos + ver métricas. No toca auditoría/respaldos.
+- `volunteer`: escanear QR + registro en terreno. Sin gestión ni métricas.
+- `attendee`: ver actividades + responder encuestas. Solo lectura propia.
+
+**Cómo se implementará (notas técnicas):**
+1. Crear los 4 roles en Auth0 Dashboard -> User Management -> Roles (usar los slugs).
+2. El `user` del SDK no trae roles por defecto: agregar Post-Login Action que inyecte custom claim (ej. `https://sync-pass/roles` = `event.authorization.roles`).
+3. En React: leer el claim del ID token y crear guardas por rol (rutas/componentes). Ojo: el frontend solo oculta UI, la autorización real debe validarla el backend/API por token.
+4. Asignación inicial manual en Dashboard; después auto-asignar `attendee` por defecto al registrarse.
+
+**Checklist para darlo por HECHO:**
+1. ✅ Roles creados en Auth0 con esos slugs (2026-10-13, User Management -> Roles) + usuario de prueba creado por UI con rol `admin` asignado.
+2. ⏳ Action post-login (código entregado, confirmar que quedó en el flujo Login del Dashboard).
+3. 🔨 Guardas en React codeadas (2026-10-13, pendiente probar en prod, reubicadas en Paso 6):
+   - `src/config/auth.ts`: `ROLES_CLAIM` + slugs `ROLES`.
+   - `src/hooks/useRoles.ts`: `useUserRoles()` lee `user['https://sync-pass/roles']`, `useHasRole()`.
+   - `src/components/RequireAuth.tsx`: exige login y opcionalmente rol.
+   - Verificación local: `npm run build` ✅ + `npm run lint` ✅.
+
+---
+
+### Paso 6: Tailwind v4 + rutas (wouter) + estructura de carpetas ✅ HECHO
+
+**Fecha:** 2026-10-13
+**Objetivo:** UI base con Tailwind última versión, 3 rutas y carpetas `pages/components/hooks/config/clients`.
+
+**1. Instalación:**
+```bash
+npm install tailwindcss @tailwindcss/vite wouter
+# tailwindcss ^4.3.3, @tailwindcss/vite ^4.3.3, wouter ^3.13.0
+```
+
+**2. Config Tailwind v4 (sin `tailwind.config.js`, así es v4):**
+- `vite.config.ts`: plugin `tailwindcss()` junto a `react()`.
+- `src/index.css`: primera línea `@import 'tailwindcss';` (el resto del CSS global se mantiene).
+
+**3. Estructura nueva (moves + archivos):**
+```
+src/
+  pages/       HomePage, DashboardPage, UsersPage (+ *.module.css)
+  components/  Layout, RequireAuth (+ *.module.css)
+  hooks/       useRoles.ts (movido de src/)
+  config/      auth.ts (movido de src/config.ts)
+  clients/     api.ts (wrapper fetch + TODO backend)
+```
+- Eliminado `src/App.css` (sin uso).
+
+**4. Rutas (wouter en `src/App.tsx`):**
+- `/` pública (Home: login/signup o bienvenida + link al dashboard).
+- `/dashboard` exige login (`RequireAuth`), cards placeholder.
+- `/users` exige rol `admin`, tabla ejemplo.
+- Nav en `Layout`: muestra Dashboard solo logeado, Usuarios solo admin.
+
+**5. Convención CSS:** módulos `*.module.css` para lo estructural + clases Tailwind (`flex gap-2`...) para utilidades. Siempre preferir CSS module.
+
+**Verificación (exitosa local):**
+```bash
+npm run build
+# ✓ 36 modules transformed.
+# ✓ built in 127ms
+npm run lint
+# oxlint sin errores
+```
+
+**Pendiente:**
+- Push -> Vercel -> probar `/`, `/dashboard`, `/users` con usuario admin en prod.
 
 ## Convención de documentación
 

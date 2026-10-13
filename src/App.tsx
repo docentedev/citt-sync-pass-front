@@ -1,42 +1,28 @@
-import { useAuth0 } from '@auth0/auth0-react'
+import { Route, Switch } from 'wouter'
+import Layout from './components/Layout.tsx'
+import RequireAuth from './components/RequireAuth.tsx'
+import { ROLES } from './config/auth.ts'
+import DashboardPage from './pages/DashboardPage.tsx'
+import HomePage from './pages/HomePage.tsx'
+import UsersPage from './pages/UsersPage.tsx'
 
-function App() {
-  const {
-    isLoading,
-    isAuthenticated,
-    error,
-    loginWithRedirect: login,
-    logout: auth0Logout,
-    user,
-  } = useAuth0()
-
-  const signup = () =>
-    login({ authorizationParams: { screen_hint: 'signup' } })
-
-  const logout = () =>
-    auth0Logout({ logoutParams: { returnTo: window.location.origin } })
-
-  if (isLoading) return 'Loading...'
-
-  return isAuthenticated ? (
-    <>
-      <p>Logged in as {user?.email}</p>
-
-      <h1>User Profile</h1>
-
-      <pre>{JSON.stringify(user, null, 2)}</pre>
-
-      <button onClick={logout}>Logout</button>
-    </>
-  ) : (
-    <>
-      {error && <p>Error: {error.message}</p>}
-
-      <button onClick={signup}>Signup</button>
-
-      <button onClick={() => login()}>Login</button>
-    </>
+export default function App() {
+  return (
+    <Layout>
+      <Switch>
+        <Route path="/" component={HomePage} />
+        <Route path="/dashboard">
+          <RequireAuth>
+            <DashboardPage />
+          </RequireAuth>
+        </Route>
+        <Route path="/users">
+          <RequireAuth roles={[ROLES.admin]}>
+            <UsersPage />
+          </RequireAuth>
+        </Route>
+        <Route>404: página no encontrada.</Route>
+      </Switch>
+    </Layout>
   )
 }
-
-export default App
