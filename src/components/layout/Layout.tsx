@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { Link } from 'wouter'
-import { ROLES } from '../config/auth.ts'
-import { useHasRole } from '../hooks/useRoles.ts'
+import { ROLES } from '../../config/auth.ts'
+import { useHasRole } from '../../hooks/use-roles/useRoles.ts'
 import styles from './Layout.module.css'
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -32,10 +32,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             </Link>
           )}
           {isAuthenticated ? (
-            <>
+            <div className={styles.auth}>
               <span className={styles.user}>{user?.email}</span>
               <button onClick={logout}>Salir</button>
-            </>
+            </div>
           ) : (
             <Link href="/" className={styles.link}>
               Ingresar

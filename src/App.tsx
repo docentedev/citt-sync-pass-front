@@ -1,10 +1,10 @@
 import { Route, Switch } from 'wouter'
-import Layout from './components/Layout.tsx'
-import RequireAuth from './components/RequireAuth.tsx'
+import Layout from './components/layout/Layout.tsx'
+import RequireAuth from './components/require-auth/RequireAuth.tsx'
 import { ROLES } from './config/auth.ts'
-import DashboardPage from './pages/DashboardPage.tsx'
-import HomePage from './pages/HomePage.tsx'
-import UsersPage from './pages/UsersPage.tsx'
+import DashboardPage from './pages/dashboard/DashboardPage.tsx'
+import HomePage from './pages/home/HomePage.tsx'
+import UsersPage from './pages/users/UsersPage.tsx'
 
 export default function App() {
   return (

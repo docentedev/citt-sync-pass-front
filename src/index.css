@@ -53,15 +53,26 @@
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
+  margin: 0;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 0.5rem 1rem;
+}
+
+button:hover {
+  border-color: var(--accent);
 }
 
 body {

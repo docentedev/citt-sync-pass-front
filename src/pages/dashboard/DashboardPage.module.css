@@ -8,9 +8,15 @@
 .card {
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 1.25rem;
   background: var(--bg);
   box-shadow: var(--shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-border);
 }
 
 .number {

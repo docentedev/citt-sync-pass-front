@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react'
-import { ROLES_CLAIM } from '../config/auth.ts'
+import { ROLES_CLAIM } from '../../config/auth.ts'
 
 /** Lee los roles del ID token (los pone la Post-Login Action, ver README Paso 5). */
 export function useUserRoles(): string[] {

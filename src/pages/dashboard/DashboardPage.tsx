@@ -1,4 +1,5 @@
-import { useUserRoles } from '../hooks/useRoles.ts'
+import { useDocumentTitle } from '../../hooks/use-document-title/useDocumentTitle.ts'
+import { useUserRoles } from '../../hooks/use-roles/useRoles.ts'
 import styles from './DashboardPage.module.css'
 
 // Datos de ejemplo: cuando haya backend salen de src/clients/api.ts
@@ -10,6 +11,7 @@ const CARDS = [
 ]
 
 export default function DashboardPage() {
+  useDocumentTitle('Dashboard | Sync Pass')
   const roles = useUserRoles()
 
   return (

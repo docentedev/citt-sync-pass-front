@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
-import { useUserRoles } from '../hooks/useRoles.ts'
+import { useUserRoles } from '../../hooks/use-roles/useRoles.ts'
 
 /** Envuelve rutas que exigen login y, opcionalmente, alguno de los roles. */
 export default function RequireAuth({
