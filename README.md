@@ -273,6 +273,20 @@ Si la lógica es pura (sin JSX ni hooks), va a `MiComponente.utils.ts` al lado d
 - `Client ... is not authorized to access resource server`: autorizar la SPA en el API (pestaña Machine to Machine Applications / Application Access).
 - `Consent required`: `Allow Skipping User Consent` ON + fallback a login interactivo en código.
 
+---
+
+### Paso 10: BFF en CasaOS + front en Vercel ✅ HECHO
+
+**Fecha:** 2026-10-13
+**Objetivo:** BFF sin DB/WS corriendo en CasaOS (`192.168.1.46:3004`) y consumido por el front en Vercel por HTTPS.
+
+**Qué se hizo:**
+1. Jar ya compilado (`bff/build/libs/sync-pass-bff-0.0.1.jar`) copiado a `/DATA/AppData/sync-pass-bff/app.jar` en el mini PC; contenedor `sync-pass-bff` con `eclipse-temurin:21-jre` (sin build en el servidor), puerto `0.0.0.0:3004->8080`, mismas env Auth0 del `docker-compose.yml`.
+2. NPM: `bff.casa.claudioviajando.com` (cert comodín + lista `solo-lan`) y `bff.claudioviajando.com` (cert propio Porkbun DNS-01, público). dnsmasq: `bff.claudioviajando.com -> 192.168.1.46` en LAN.
+3. Front: `.env.development` → BFF del repo (`:8080`); `.env.local` → BFF desplegado (`http://192.168.1.46:3004`, gana comentando la línea de `.env.development`); `.env.production` + default en código → `https://bff.claudioviajando.com` en Vercel. Reiniciar `npm run dev` tras cambiar envs.
+
+**Verificación:** `GET /api/users` sin token → `401` en directo (`:3004`), interno (`bff.casa`) y público (`bff.claudioviajando.com`); preflight CORS `200` desde Vercel y `localhost:5173`. `npm run build` ✅ + `npm test` (14) ✅.
+
 ## Convención de documentación
 
 1. Trabajamos el paso en código.

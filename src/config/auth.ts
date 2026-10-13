@@ -19,10 +19,10 @@ export const ROLES_CLAIM: string =
 export const AUTH0_AUDIENCE: string =
   env.VITE_AUTH0_AUDIENCE ?? 'https://sync-pass-api'
 
-// URL del BFF. Default local; en local se sobreescribe con .env.local
-// apuntando al servicio de CasaOS.
+// URL del BFF. Default prod (Vercel usa este valor: su plan no tiene envs);
+// en local se sobreescribe con .env.local apuntando al servicio de CasaOS.
 export const BFF_URL: string =
-  env.VITE_BFF_URL ?? 'http://localhost:8080'
+  env.VITE_BFF_URL ?? 'https://bff.claudioviajando.com'
 
 export interface BffUser {
   id: string
