@@ -119,6 +119,32 @@ npm run lint
 **Pendiente para ✅ total:**
 - Push -> Vercel redeploy -> probar Signup/Login/Logout en `https://citt-sync-pass-front.vercel.app/` y confirmar `redirect_uri` + logout `returnTo` vuelven al origen.
 
+---
+
+### Paso 4: Auth0 centralizado en `src/config.ts` ✅ HECHO
+
+**Fecha:** 2026-10-13
+**Objetivo:** sacar `domain`/`clientId` de `src/main.tsx` a un archivo de config en duro (los envs de Vercel son de pago en el plan actual, se descarta `.env`).
+
+**Qué se hizo:**
+1. Nuevo `src/config.ts` con `AUTH0_DOMAIN` y `AUTH0_CLIENT_ID` exportados.
+2. `src/main.tsx`: importa desde `./config.ts` (revirtió el intento con `import.meta.env` + `.env.example`/`.env.local`, archivos eliminados).
+3. Sin config extra en Vercel: el deploy funciona tal cual con `npm run build` -> `dist/`.
+
+**Verificación (exitosa local):**
+```bash
+npm run build
+# ✓ 18 modules transformed.
+# ✓ built in 92ms
+npm run lint
+# oxlint sin errores
+```
+
+**Nota:** `domain` + `clientId` son valores públicos de SPA (quedan visibles en el JS), no son secretos. Nunca poner un `clientSecret` en el frontend.
+
+**Pendiente para ✅ total del Auth0:**
+- Push -> Vercel redeploy -> probar Signup/Login/Logout en `https://citt-sync-pass-front.vercel.app/`.
+
 ## Convención de documentación
 
 1. Trabajamos el paso en código.
